@@ -1,0 +1,12 @@
+edge_env/
+win_env/
+__pycache__/
+data/
+
+*.vcd
+*.vvp
+sim.vvp
+
+*.hex
+fpga_input_preview.png
+edge_output.png
