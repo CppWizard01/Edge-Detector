@@ -4,7 +4,7 @@ python scripts\gen_input.py
 if %errorlevel% neq 0 exit /b %errorlevel%
 
 echo === Step 2: Compiling Verilog Design ===
-iverilog -o sim.vvp tesbench\tb_edge_detector.v src\edge_detector.v src\gaussian_blur.v src\sobel.v src\line_buffer.v
+iverilog -o sim.vvp testbench\tb_edge_detector.v src\edge_detector.v src\gaussian_blur.v src\sobel.v src\line_buffer.v
 if %errorlevel% neq 0 exit /b %errorlevel%
 
 echo === Step 3: Running Hardware Simulation ===

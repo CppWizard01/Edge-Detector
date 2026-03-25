@@ -39,7 +39,7 @@ module tb_edge_detector();
 
         valid_cnt = 0;
         
-        $readmemh("input_image.hex", img_mem);
+        $readmemh("ip_img1.hex", img_mem);
         out_file = $fopen("output_image.hex", "w");
         
         rst = 1;
