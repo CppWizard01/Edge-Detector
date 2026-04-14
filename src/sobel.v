@@ -97,6 +97,7 @@ module sobel #(
             v4 <= 0;
             v5 <= 0;
             v6 <= 0;
+            v7 <= 0;
             valid_out <= 0;
             p_out <= 0;
         end 
@@ -119,12 +120,19 @@ module sobel #(
             g <= gx_abs + gy_abs;
             v7 <= v6;
 
-            p_out <= (g > threshold) ? 8'hFF : 8'h00;
             valid_out <= v7;
+            
+            if (v7) begin
+                p_out <= (g > threshold) ? 8'hFF : 8'h00;
+            end 
+            else begin
+                p_out <= 8'h00; 
+            end
         end 
         
         else begin
             valid_out <= 0;
+            p_out <= 0;
         end
     end
 

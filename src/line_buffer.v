@@ -14,6 +14,13 @@ module line_buffer #(
     
     reg [7:0] mem [0:WIDTH-1];
     
+    integer i;
+    initial begin
+        for (i = 0; i < WIDTH; i = i + 1) begin
+            mem[i] = 0;
+        end
+    end    
+    
     always @(posedge clk) begin
         if (valid_in) begin
             dout <= mem[ptr];
