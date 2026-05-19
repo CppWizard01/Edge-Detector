@@ -10,3 +10,5 @@ sim.vvp
 *.hex
 fpga_input_preview.png
 edge_output.png
+
+/obj_dir

@@ -2,36 +2,26 @@
 
 module tb_edge_detector();
 
-    reg clk;
-    reg rst;
+    logic clk = 0;
+    logic rst_n;
+    logic [7:0] threshold;
     
-    reg valid_in;
-    reg [7:0] p_in;
-    reg [7:0] threshold;
-    
-    wire valid_out;
-    wire [7:0] p_out;
+    stream_if #(.WIDTH(8)) in_bus();
+    stream_if #(.WIDTH(8)) out_bus();
     
     edge_detector #(.WIDTH(128)) dut (
         .clk(clk),
-        .rst(rst),
-        .valid_in(valid_in),
-        .p_in(p_in),
+        .rst_n(rst_n),
         .threshold(threshold),
-        .valid_out(valid_out),
-        .p_out(p_out)
+        .in_bus(in_bus),
+        .out_bus(out_bus)
     );
     
-    reg [7:0] img_mem [0:16383];
+    logic [7:0] img_mem [16384];
+    int out_file;
+    int valid_cnt;
     
-    integer out_file;
-    integer i;
-    integer valid_cnt;
-    
-    initial begin 
-        clk = 0; 
-        forever #5 clk = ~clk; 
-    end
+    always #5 clk = ~clk; 
     
     initial begin
         $dumpfile("waveform.vcd");
@@ -39,32 +29,32 @@ module tb_edge_detector();
 
         valid_cnt = 0;
         
-        $readmemh("ip_img1.hex", img_mem);
+        $readmemh("data/hex/ip_img1.hex", img_mem);
         out_file = $fopen("output_image.hex", "w");
         
-        rst = 1;
-        valid_in = 0;
-        p_in = 0;
-        threshold = 8'h80;
+        rst_n = 0;
+        in_bus.valid = 0;
+        in_bus.pixel  = 0;
+        threshold    = 8'h80;
         
         #100;
-        rst = 0;
+        rst_n = 1'b1;
         #20;
         
-        for (i = 0; i < 16384; i = i + 1) begin
+        for (int i = 0; i < 16384; i++) begin
             @(posedge clk);
-            valid_in <= 1;
-            p_in <= img_mem[i];
+            in_bus.valid <= 1'b1;
+            in_bus.pixel  <= img_mem[i];
         end
         
-        for (i = 0; i < 50; i = i + 1) begin
+        for (int i = 0; i < 600; i++) begin
             @(posedge clk);
-            valid_in <= 1;
-            p_in <= 8'h00;
+            in_bus.valid <= 1'b1;
+            in_bus.pixel  <= 8'h00;
         end
         
         @(posedge clk);
-        valid_in <= 0;
+        in_bus.valid <= 1'b0;
 
         #5000;
         
@@ -73,10 +63,10 @@ module tb_edge_detector();
         $finish;
     end
     
-    always @(posedge clk) begin
-        if (valid_out && valid_cnt < 15376) begin
-            $fwrite(out_file, "%02X\n", p_out);
-            valid_cnt = valid_cnt + 1;
+    always_ff @(posedge clk) begin
+        if (out_bus.valid && valid_cnt < 15376) begin
+            $fwrite(out_file, "%02X\n", out_bus.pixel);
+            valid_cnt <= valid_cnt + 1;
         end
     end
 
