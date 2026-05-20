@@ -5,8 +5,8 @@ module gaussian_blur #(
     parameter int PIX_WIDTH = 8
 )(
     input logic clk, rst_n,
-    stream_if.rx in_bus,
-    stream_if.tx out_bus
+    stream_if in_bus,
+    stream_if out_bus
 );
 
     logic [PIX_WIDTH-1:0] window [3][3];
@@ -30,11 +30,9 @@ module gaussian_blur #(
         if (!rst_n) begin
             valid_pipe <= '0;
             out_bus.valid <= 1'b0;
-        end else if (in_bus.valid) begin
+        end else begin
             valid_pipe <= {valid_pipe[PIPE_DEPTH-2:0], window_valid};
             out_bus.valid <= valid_pipe[PIPE_DEPTH-1];
-        end else begin
-            out_bus.valid <= 1'b0;
         end
     end
 
@@ -46,7 +44,7 @@ module gaussian_blur #(
     always_ff @(posedge clk) begin
         if (!rst_n) begin
             out_bus.pixel <= '0;
-        end else if (in_bus.valid) begin
+        end else begin
             sum_c1    <= window[0][0] + window[0][2];
             sum_c2    <= window[2][0] + window[2][2];
             sum_e1    <= window[0][1] + window[1][0];

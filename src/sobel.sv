@@ -7,8 +7,8 @@ module sobel #(
     input  logic clk,
     input  logic rst_n,
     input  logic [PIX_WIDTH-1:0] threshold,
-    stream_if.rx in_bus,
-    stream_if.tx out_bus
+    stream_if in_bus,
+    stream_if out_bus
 );
 
     logic [PIX_WIDTH-1:0] window [3][3];
@@ -32,11 +32,9 @@ module sobel #(
         if (!rst_n) begin
             valid_pipe <= '0;
             out_bus.valid <= 1'b0;
-        end else if (in_bus.valid) begin
+        end else begin
             valid_pipe <= {valid_pipe[PIPE_DEPTH-2:0], window_valid};
             out_bus.valid <= valid_pipe[PIPE_DEPTH-1];
-        end else begin
-            out_bus.valid <= 1'b0;
         end
     end
 
@@ -58,8 +56,7 @@ module sobel #(
             sum_bottom <= '0;
             sum_top <= '0;
             out_bus.pixel <= '0;
-        end 
-        else if (in_bus.valid) begin
+        end else begin
             sum_right  <= window[0][2] + window[2][2] + (window[1][2] << 1);
             sum_left   <= window[0][0] + window[2][0] + (window[1][0] << 1);
             sum_bottom <= window[2][0] + window[2][2] + (window[2][1] << 1);

@@ -5,8 +5,8 @@ module edge_detector #(
 )(
     input logic clk, rst_n,
     input logic [7:0] threshold,
-    stream_if.rx in_bus,
-    stream_if.tx out_bus
+    stream_if in_bus,
+    stream_if out_bus
 );
 
     stream_if #(.WIDTH(8)) blur_to_sobel_bus();

@@ -6,27 +6,13 @@ module window_generator #(
 )(
     input  logic clk,
     input  logic rst_n,
-    stream_if.rx in_bus,
+    stream_if in_bus,
     output logic [PIX_WIDTH-1:0] window [3][3],
     output logic window_valid
 );
 
     logic [$clog2(WIDTH)-1:0] x_in;
     logic [15:0] y_in;
-
-    always_ff @(posedge clk) begin
-        if (!rst_n) begin
-            x_in <= '0;
-            y_in <= '0;
-        end else if (in_bus.valid) begin
-            if (x_in == WIDTH - 1) begin
-                x_in <= '0;
-                y_in <= y_in + 1'b1;
-            end else begin
-                x_in <= x_in + 1'b1;
-            end
-        end
-    end
 
     stream_if lb1_out_bus();
     stream_if lb2_out_bus();
@@ -48,7 +34,9 @@ module window_generator #(
 
     always_ff @(posedge clk) begin
         if (in_bus.valid) begin
-            p_in_d1    <= in_bus.pixel;
+            p_in_d1 <= in_bus.pixel;
+        end
+        if (lb1_out_bus.valid) begin
             p_in_d2    <= p_in_d1;
             lb1_out_d1 <= lb1_out_bus.pixel;
         end
@@ -59,7 +47,7 @@ module window_generator #(
             for (int r = 0; r < 3; r++) 
                 for (int c = 0; c < 3; c++)
                     window[r][c] <= '0;
-        end else if (in_bus.valid) begin
+        end else if (lb2_out_bus.valid) begin 
             window[0][2] <= lb2_out_bus.pixel;
             window[0][1] <= window[0][2];
             window[0][0] <= window[0][1];
@@ -74,6 +62,20 @@ module window_generator #(
         end
     end
 
-    assign window_valid = (x_in >= 2) && (y_in >= 2);
+    always_ff @(posedge clk) begin
+        if (!rst_n) begin
+            x_in <= '0;
+            y_in <= '0;
+        end else if (lb2_out_bus.valid) begin
+            if (x_in == WIDTH - 1) begin
+                x_in <= '0;
+                y_in <= y_in + 1'b1;
+            end else begin
+                x_in <= x_in + 1'b1;
+            end
+        end
+    end
+
+    assign window_valid = lb2_out_bus.valid && (x_in >= 2) && (y_in >= 2);
 
 endmodule
