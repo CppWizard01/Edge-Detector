@@ -1,7 +1,7 @@
 @echo off
 
 echo === Step 1: Generating Input Image Hex ===
-python scripts\gen_input.py data\ip_img1.png --out_dir .
+python scripts\gen_input.py data\ip_img1.png --out_dir data\hex
 if %errorlevel% neq 0 exit /b %errorlevel%
 
 echo === Step 2: Compiling SystemVerilog Design ===
