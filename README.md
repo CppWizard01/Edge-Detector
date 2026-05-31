@@ -2,7 +2,7 @@
 
 A fully synchronous, streaming hardware pipeline implementing a **Canny-like front end** in SystemVerilog. It processes a grayscale pixel stream using a **3×3 Gaussian blur** pre-processing stage followed by a **Sobel edge detector**, outputting a binary edge map at one pixel per clock cycle.
 
-Synthesized and verified on **Xilinx Vivado** targeting a 7-series FPGA. Timing closure achieved at **~260 MHz** (WNS = +1.222 ns on a 5 ns / 200 MHz constraint).
+Synthesized and verified on **Xilinx Vivado** targeting a 7-series FPGA. Timing closure achieved at **~265 MHz** (WNS = +1.222 ns on a 5 ns / 200 MHz constraint).
 
 ---
 
@@ -37,9 +37,9 @@ Edge-Detector/
 └── docs/
 │   ├── Documentation.pdf
 │   └── architecture.png 
-└── .gitignore/
-└── README.md/
-└── run.bat/
+└── .gitignore
+└── README.md
+└── run.bat
     
 ```
 
@@ -54,7 +54,7 @@ The pipeline has two cascaded 3×3 modules. Each module uses:
 - A 3×3 shift register for the spatial neighborhood
 - Explicit delay registers to compensate for BRAM read latency
 
-> See `PS_4.pdf` for the full design document, block diagram, waveforms, and design tradeoff rationale.
+> See `docs/Documentation.pdf` for the full design document, block diagram, waveforms, and design tradeoff rationale.
 
 ---
 
@@ -89,7 +89,7 @@ The design uses a **crop-not-pad** border strategy. Each 3×3 module removes a 1
 | Flip-Flops | 449 | Sliding window registers + pipeline stages |
 | BRAM Tiles | 2 | 4 logical line buffers packed into 2 physical tiles |
 | DSP Slices | **0** | L1 Norm replaces square root — no multipliers needed |
-| Max Frequency | **~260 MHz** | WNS = +1.222 ns on a 200 MHz (5 ns) constraint |
+| Max Frequency | **~265 MHz** | WNS = +1.222 ns on a 200 MHz (5 ns) constraint |
 
 ---
 
@@ -107,7 +107,7 @@ The design uses a **crop-not-pad** border strategy. Each 3×3 module removes a 1
 
 To convert your own PNG to a simulation hex stream:
 ```bash
-python scripts/gen_input.py --input data/your_image.png --output data/hex/your_image.hex --width 128
+python scripts/gen_input.py data/your_image.png --out_dir data/hex --size 128
 ```
 The script resizes, converts to greyscale, and writes one byte per line as hex.
 
@@ -116,11 +116,12 @@ The script resizes, converts to greyscale, and writes one byte per line as hex.
 **Verilator:**
 ```bat
 echo === Compiling SystemVerilog Design ===
-wsl bash -c "cd /mnt/c/Users/sdhai/Desktop/Edge-Detector && verilator --binary --timing -Wall -Wno-fatal -sv src/stream_if.sv src/window_generator.sv src/line_buffer.sv src/gaussian_blur.sv src/sobel.sv src/edge_detector.sv testbench/tb_edge_detector.sv --top-module tb_edge_detector"
+for /f "delims=" %%i in ('wsl wslpath -a "%CD%"') do set WSL_PATH=%%i
+wsl bash -c "cd '%WSL_PATH%' && verilator --binary --timing -Wall -Wno-fatal -sv src/stream_if.sv src/window_generator.sv src/line_buffer.sv src/gaussian_blur.sv src/sobel.sv src/edge_detector.sv testbench/tb_edge_detector.sv --top-module tb_edge_detector"
 if %errorlevel% neq 0 exit /b %errorlevel%
 
 echo === Running Hardware Simulation ===
-wsl bash -c "cd /mnt/c/Users/sdhai/Desktop/Edge-Detector && ./obj_dir/Vtb_edge_detector"
+wsl bash -c "cd '%WSL_PATH%' && ./obj_dir/Vtb_edge_detector"
 if %errorlevel% neq 0 exit /b %errorlevel%
 ```
 
@@ -129,7 +130,7 @@ The testbench reads from `data/hex/ip_img*.hex` and writes output hex files to t
 ### Step 3 — View Output Images
 
 ```bash
-python scripts/read_output.py --input output_img1.hex --output result1.png --width 124
+python scripts/read_output.py --in_file output_image.hex --out_file result1.png --size 124
 ```
 Output images are 124×124 pixels (128 − 4 for border cropping across both stages).
 
@@ -137,21 +138,9 @@ Output images are 124×124 pixels (128 − 4 for border cropping across both sta
 
 The edge threshold is an 8-bit parameter on the top-level module. In `testbench/tb_edge_detector.sv`, find:
 ```systemverilog
-.threshold(8'd30)   // Adjust this value (0–255)
+.threshold(8'h80)   // Adjust this value (0–255)
 ```
 A lower threshold detects weaker edges; a higher threshold only detects sharp transitions.
-
----
-
-## Module Reference
-
-| Module | Parameters | Inputs | Outputs |
-|---|---|---|---|
-| `edge_detector` | `WIDTH`, `threshold` | `clk`, `rst`, `p_in[7:0]`, `valid_in` | `p_out[7:0]`, `valid_out` |
-| `gaussian_blur` | `WIDTH` | `clk`, `rst`, pixel stream | blurred pixel stream |
-| `sobel` | `WIDTH`, `threshold` | `clk`, `rst`, pixel stream | edge map stream |
-| `window_generator` | `WIDTH` | `clk`, `rst`, pixel stream | `win[0:8][7:0]`, `valid` |
-| `line_buffer` | `WIDTH` | `clk`, `wr_en`, `d_in[7:0]` | `d_out[7:0]` |
 
 ---
 
@@ -159,7 +148,7 @@ A lower threshold detects weaker edges; a higher threshold only detects sharp tr
 
 1. Run `gen_input.py` pointing at any PNG — it resizes, converts to greyscale, and auto-generates the config:
    ```bash
-   python scripts/gen_input.py --input path/to/your_image.png
+   python scripts/gen_input.py data/your_image.png --out_dir data/hex --size 128
    ```
 2. Recompile and simulate. The python script automatically resizes your custom image to 128×128 to match the fixed hardware grid.
 3. Run `read_output.py` to convert the output hex back to a viewable PNG.
