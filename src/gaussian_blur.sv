@@ -42,24 +42,21 @@ module gaussian_blur #(
     logic [11:0] sum_partial, final_sum;
 
     always_ff @(posedge clk) begin
+        sum_c1         <= window[0][0] + window[0][2];
+        sum_c2         <= window[2][0] + window[2][2];
+        sum_e1         <= window[0][1] + window[1][0];
+        sum_e2         <= window[1][2] + window[2][1];
+        center_d1      <= window[1][1];
+        sum_corners    <= sum_c1 + sum_c2;
+        sum_edges      <= sum_e1 + sum_e2;
+        center_d2      <= center_d1;
+        sum_partial    <= sum_corners + (sum_edges << 1);
+        center_shifted <= {center_d2, 2'b00};
+        final_sum      <= sum_partial + center_shifted;
+
         if (!rst_n) begin
             out_bus.pixel <= '0;
         end else begin
-            sum_c1    <= window[0][0] + window[0][2];
-            sum_c2    <= window[2][0] + window[2][2];
-            sum_e1    <= window[0][1] + window[1][0];
-            sum_e2    <= window[1][2] + window[2][1];
-            center_d1 <= window[1][1];
-
-            sum_corners <= sum_c1 + sum_c2;
-            sum_edges   <= sum_e1 + sum_e2;
-            center_d2   <= center_d1;
-
-            sum_partial    <= sum_corners + (sum_edges << 1);
-            center_shifted <= {center_d2, 2'b00};
-
-            final_sum <= sum_partial + center_shifted;
-
             out_bus.pixel <= final_sum[11:4];
         end
     end

@@ -43,19 +43,13 @@ module window_generator #(
     end
 
     always_ff @(posedge clk) begin
-        if (!rst_n) begin
-            for (int r = 0; r < 3; r++) 
-                for (int c = 0; c < 3; c++)
-                    window[r][c] <= '0;
-        end else if (lb2_out_bus.valid) begin 
+        if (lb2_out_bus.valid) begin 
             window[0][2] <= lb2_out_bus.pixel;
             window[0][1] <= window[0][2];
             window[0][0] <= window[0][1];
-
             window[1][2] <= lb1_out_d1;
             window[1][1] <= window[1][2];
             window[1][0] <= window[1][1];
-
             window[2][2] <= p_in_d2;
             window[2][1] <= window[2][2];
             window[2][0] <= window[2][1];

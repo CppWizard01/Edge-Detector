@@ -45,31 +45,19 @@ module sobel #(
     logic [10:0] sum_bottom, sum_top;
 
     always_ff @(posedge clk) begin
+        sum_right  <= window[0][2] + window[2][2] + (window[1][2] << 1);
+        sum_left   <= window[0][0] + window[2][0] + (window[1][0] << 1);
+        sum_bottom <= window[2][0] + window[2][2] + (window[2][1] << 1);
+        sum_top    <= window[0][0] + window[0][2] + (window[0][1] << 1);
+        gx         <= $signed({1'b0, sum_right})  - $signed({1'b0, sum_left});
+        gy         <= $signed({1'b0, sum_bottom}) - $signed({1'b0, sum_top});
+        gx_abs     <= (gx < 0) ? -gx : gx;
+        gy_abs     <= (gy < 0) ? -gy : gy;
+        g          <= gx_abs + gy_abs;
+
         if (!rst_n) begin
-            gx <= '0;
-            gy <= '0;
-            gx_abs <= '0;
-            gy_abs <= '0;
-            g <= '0;
-            sum_right <= '0;
-            sum_left <= '0;
-            sum_bottom <= '0;
-            sum_top <= '0;
             out_bus.pixel <= '0;
         end else begin
-            sum_right  <= window[0][2] + window[2][2] + (window[1][2] << 1);
-            sum_left   <= window[0][0] + window[2][0] + (window[1][0] << 1);
-            sum_bottom <= window[2][0] + window[2][2] + (window[2][1] << 1);
-            sum_top    <= window[0][0] + window[0][2] + (window[0][1] << 1);
-
-            gx <= $signed({1'b0, sum_right})  - $signed({1'b0, sum_left});
-            gy <= $signed({1'b0, sum_bottom}) - $signed({1'b0, sum_top});
-
-            gx_abs <= (gx < 0) ? -gx : gx;
-            gy_abs <= (gy < 0) ? -gy : gy;
-
-            g <= gx_abs + gy_abs;
-            
             out_bus.pixel <= (g > threshold) ? 8'hFF : 8'h00;
         end
     end
