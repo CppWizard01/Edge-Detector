@@ -62,10 +62,10 @@ The pipeline has two cascaded 3×3 modules. Each module uses:
 
 | Latency Type | Formula | Value (W=128) |
 |---|---|---|
-| Computational (Lc) | 7 (Gaussian) + 7 (Sobel) | **14 clock cycles** |
-| Spatial (Ls) | 4W + Lc | **526 clock cycles** |
+| Computational (Lc) | 8 (Gaussian) + 8 (Sobel) | **16 clock cycles** |
+| Spatial (Ls) | 2W + 2(W-2) + Lc + 8 | **532 clock cycles** |
 
-The first valid output pixel appears 526 clock cycles after the first input pixel for a 128-pixel-wide image.
+The first valid output pixel appears 532 clock cycles after the first input pixel for a 128-pixel-wide image.
 
 ---
 
@@ -178,12 +178,12 @@ Instead, the pipeline simply crops — invalid border pixels are dropped as the 
 
 Mathematically, a 3×3 Gaussian followed by a 3×3 Sobel is equivalent to a single pre-computed 5×5 convolution. Both approaches require four line buffers. However, a monolithic 5×5 filter needs a combinational adder tree summing 25 pixels in one stage — a massive propagation delay that would set the critical path and limit clock speed.
 
-Cascading two separate 3×3 modules keeps the combinational logic between registers short, allowing the FPGA to achieve a significantly higher maximum clock frequency at the cost of deeper pipeline latency (14 cycles vs. ~7 for a single stage).
+Cascading two separate 3×3 modules keeps the combinational logic between registers short, allowing the FPGA to achieve a significantly higher maximum clock frequency at the cost of deeper pipeline latency (16 cycles vs. ~8 for a single stage).
 
 ### 4. Magnitude Approximation: L1 Norm vs. True Euclidean
 **Tradeoff: Area vs. Precision**
 
-The true Sobel magnitude is `√(Gx² + Gy²)`, which requires two multipliers (DSP slices) and multi-cycle square root logic. By using the Manhattan distance approximation `|G| = |Gx| + |Gy|` instead, the design eliminates all DSP usage — replaced by a single lightweight adder. The result is **0 DSP slices** consumed, freeing the FPGA's dedicated multiplier blocks entirely for other system tasks. The approximation introduces a maximum ~12% magnitude overestimate in the worst case (45° edges), which is imperceptible after thresholding.
+The true Sobel magnitude is `√(Gx² + Gy²)`, which requires two multipliers (DSP slices) and multi-cycle square root logic. By using the Manhattan distance approximation `|G| = |Gx| + |Gy|` instead, the design eliminates all DSP usage — replaced by a single lightweight adder. The result is **0 DSP slices** consumed, freeing the FPGA's dedicated multiplier blocks entirely for other system tasks. The approximation introduces a maximum ~41% magnitude overestimate in the worst case (45° edges), which is imperceptible after thresholding.
 
 ---
 
